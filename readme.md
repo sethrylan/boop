@@ -82,4 +82,3 @@ go install github.com/sethrylan/boop@latest
 ```
 
 **Or, from [Releases](https://github.com/sethrylan/boop/releases)**
-
