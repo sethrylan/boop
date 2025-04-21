@@ -129,7 +129,7 @@ func TestBytesReader(t *testing.T) {
 }
 
 func TestResultSetAddAndGet(t *testing.T) {
-	rs := &resultSet{}
+	rs := &recordSet{}
 
 	testRecords := []record{
 		{latency: 100 * time.Millisecond, status: 200, size: 100, failed: false},
@@ -166,7 +166,7 @@ func TestResultSetSummarize(t *testing.T) {
 		os.Stdout = oldStdout
 	}()
 
-	rs := &resultSet{
+	rs := &recordSet{
 		start: time.Now().Add(-1 * time.Second),
 		end:   time.Now(),
 		records: []record{

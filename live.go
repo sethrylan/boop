@@ -18,55 +18,84 @@ type timeSeriesPoint struct {
 type liveMetrics struct {
 	sync.Mutex
 	points     []timeSeriesPoint
-	lastCount  int
+	recordCh   <-chan record
+	count      int
 	lastTime   time.Time
 	startTime  time.Time
 	windowSize time.Duration
 }
 
-func newLiveMetrics(windowSize time.Duration) *liveMetrics {
+func newLiveMetrics(windowSize time.Duration, recordCh <-chan record) *liveMetrics {
 	now := time.Now()
 	return &liveMetrics{
 		points:     make([]timeSeriesPoint, 0, 100),
+		recordCh:   recordCh,
 		lastTime:   now,
 		startTime:  now,
 		windowSize: windowSize,
 	}
 }
 
-func (lm *liveMetrics) sample(results *resultSet) {
+// processSamples collects samples from channel and updates metrics
+func (lm *liveMetrics) processSamples(ctx context.Context) {
+	ticker := time.NewTicker(500 * time.Millisecond)
+	defer ticker.Stop()
+
+	var samples []record
+	lastProcessTime := time.Now()
+
+	for {
+		select {
+		case rec, ok := <-lm.recordCh:
+			if !ok { // Channel closed
+				return
+			}
+			samples = append(samples, rec)
+		case <-ticker.C:
+			// Process accumulated samples on tick
+			if len(samples) > 0 {
+				lm.updateMetrics(samples, lastProcessTime)
+				samples = samples[:0] // Clear buffer
+				lastProcessTime = time.Now()
+			}
+			fmt.Print(lm.renderGraphs())
+
+		case <-ctx.Done():
+			return
+		}
+	}
+}
+
+func (lm *liveMetrics) updateMetrics(samples []record, lastTime time.Time) {
 	lm.Lock()
 	defer lm.Unlock()
 
-	results.mu.Lock()
-	records := results.records
-	currentCount := len(records)
-	results.mu.Unlock()
-
 	now := time.Now()
+	timeDiff := now.Sub(lastTime).Seconds()
 
 	// Calculate RPS
-	timeDiff := now.Sub(lm.lastTime).Seconds()
-	countDiff := currentCount - lm.lastCount
 	rps := 0.0
 	if timeDiff > 0 {
-		rps = float64(countDiff) / timeDiff
+		rps = float64(len(samples)) / timeDiff
 	}
 
-	// Calculate average latency for new records
+	// Calculate average latency
 	var totalLatency time.Duration
-	newRecords := 0
-	for i := lm.lastCount; i < currentCount; i++ {
-		if !records[i].failed {
-			totalLatency += records[i].latency
-			newRecords++
+	successCount := 0
+	for _, sample := range samples {
+		if !sample.failed {
+			totalLatency += sample.latency
+			successCount++
 		}
 	}
 
 	avgLatency := 0.0
-	if newRecords > 0 {
-		avgLatency = totalLatency.Seconds() / float64(newRecords)
+	if successCount > 0 {
+		avgLatency = totalLatency.Seconds() / float64(successCount)
 	}
+
+	// Update total count
+	lm.count += len(samples)
 
 	// Add the data point
 	lm.points = append(lm.points, timeSeriesPoint{
@@ -74,10 +103,6 @@ func (lm *liveMetrics) sample(results *resultSet) {
 		latency:   avgLatency,
 		rps:       rps,
 	})
-
-	// Update tracking values
-	lm.lastCount = currentCount
-	lm.lastTime = now
 
 	// Trim old points outside window
 	cutoff := now.Add(-lm.windowSize)
@@ -136,18 +161,8 @@ func (lm *liveMetrics) renderGraphs() string {
 	return fmt.Sprintf("\033[H\033[2J(running for %s, showing %s)\n\n%s\n\n%s", elapsedTime, min(lm.windowSize, elapsedTime), latencyGraph, rpsGraph)
 }
 
-func startLiveMonitor(ctx context.Context, results *resultSet) {
-	metrics := newLiveMetrics(30 * time.Second)
-	ticker := time.NewTicker(500 * time.Millisecond)
-	defer ticker.Stop()
-
-	for {
-		select {
-		case <-ticker.C:
-			metrics.sample(results)
-			fmt.Print(metrics.renderGraphs())
-		case <-ctx.Done():
-			return
-		}
-	}
+func startLiveMonitor(ctx context.Context, recordCh chan record) {
+	// Create and start metrics processor directly with the record channel
+	metrics := newLiveMetrics(30*time.Second, recordCh)
+	metrics.processSamples(ctx)
 }

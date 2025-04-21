@@ -67,7 +67,7 @@ func TestWorkerSuccess(t *testing.T) {
 	// Set up channels and result set.
 	jobCh := make(chan int, 3)
 	var wg sync.WaitGroup
-	results := &resultSet{}
+	results := &recordSet{}
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -111,7 +111,7 @@ func TestWorkerFailure(t *testing.T) {
 	// Set up channels and result set.
 	jobCh := make(chan int, 2)
 	var wg sync.WaitGroup
-	results := &resultSet{}
+	results := &recordSet{}
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -155,7 +155,7 @@ func TestWorkerContextCancellation(t *testing.T) {
 	// Create a buffered channel that won't block
 	jobCh := make(chan int, 100)
 	var wg sync.WaitGroup
-	results := &resultSet{}
+	results := &recordSet{}
 
 	// Create a context we can cancel
 	ctx, cancel := context.WithCancel(context.Background())
@@ -203,7 +203,7 @@ func TestWorkerRateLimiting(t *testing.T) {
 
 	jobCh := make(chan int, 5)
 	var wg sync.WaitGroup
-	results := &resultSet{}
+	results := &recordSet{}
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -283,7 +283,7 @@ func TestWorkerWithBody(t *testing.T) {
 
 	jobCh := make(chan int, 2)
 	var wg sync.WaitGroup
-	results := &resultSet{}
+	results := &recordSet{}
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()

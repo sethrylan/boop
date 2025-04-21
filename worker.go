@@ -16,10 +16,10 @@ func worker(
 	client *http.Client,
 	reqTpl *http.Request,
 	jobCh <-chan int,
-	out *resultSet,
 	wg *sync.WaitGroup,
 	limiter <-chan time.Time,
 	withTrace bool,
+	resultCh chan<- record,
 ) {
 	defer wg.Done()
 
@@ -64,7 +64,6 @@ func worker(
 		if err != nil {
 			rec.failed = true
 			rec.errMsg = err.Error()
-			out.add(rec)
 			continue
 		}
 		_, _ = io.Copy(io.Discard, resp.Body) // drain body
@@ -75,6 +74,12 @@ func worker(
 		if resp.ContentLength > 0 {
 			rec.size = resp.ContentLength
 		}
-		out.add(rec)
+
+		select {
+		case resultCh <- rec:
+			// Successfully sent result to channel
+		default: // Don't block if channel buffer is full
+		}
+
 	}
 }

@@ -111,25 +111,33 @@ func main() {
 	// Channels & goroutines
 	jobCh := make(chan int, *concur)
 	var wg sync.WaitGroup
-	results := &resultSet{start: time.Now()}
+	recordCh := make(chan record)
+	results := &recordSet{start: time.Now()}
 
 	// set up signal handling
 	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer cancel() // Ensure context is canceled when we exit
 
 	if *live {
-		go startLiveMonitor(ctx, results)
+		go startLiveMonitor(ctx, recordCh)
 	}
 
 	for i := 0; i < *concur; i++ {
-		wg.Add(1)
+		wg.Add(1) // worker will signal they are done with the wait group
 		var limiter <-chan time.Time
 		if *rps > 0 {
 			interval := time.Duration(float64(time.Second) / *rps)
 			limiter = time.Tick(interval)
 		}
-		go worker(ctx, i, client, reqTpl, jobCh, results, &wg, limiter, *showTrace)
+		go worker(ctx, i, client, reqTpl, jobCh, &wg, limiter, *showTrace, recordCh)
 	}
+
+	// collect results
+	go func() {
+		for rec := range recordCh {
+			results.add(rec)
+		}
+	}()
 
 	// feed jobs
 	for i := 0; i < *totalReq; i++ {
@@ -203,19 +211,34 @@ type record struct {
 	errMsg  string
 }
 
-type resultSet struct {
+type recordSet struct {
 	mu         sync.Mutex
 	records    []record
 	start, end time.Time
 }
 
-func (r *resultSet) add(rec record) {
+func (r *recordSet) add(rec record) {
 	r.mu.Lock()
 	r.records = append(r.records, rec)
 	r.mu.Unlock()
 }
 
-func (r *resultSet) summarize() {
+func (r *recordSet) printStatusCodeDistribution() {
+	statusCount := map[int]int{}
+	for _, rec := range r.records {
+		statusCount[rec.status]++
+	}
+
+	fmt.Printf("\nStatus code distribution:\n")
+	for status, count := range statusCount {
+		fmt.Printf("  %d: %d\n", status, count)
+	}
+	// Print total count
+	fmt.Printf("  Total: %d\n", len(r.records))
+	fmt.Printf("\n")
+}
+
+func (r *recordSet) summarize() {
 	total := len(r.records)
 	if total == 0 {
 		fmt.Println("No records, something went wrong.")
@@ -337,9 +360,5 @@ func (r *resultSet) summarize() {
 	fmt.Printf("  resp wait:    %.4f secs, %.4f secs, %.4f secs\n", mean.Seconds(), min.Seconds(), max.Seconds())
 	fmt.Printf("  resp read:    0.0000 secs, 0.0000 secs, 0.0000 secs\n")
 
-	// Print status code distribution
-	fmt.Printf("\nStatus code distribution:\n")
-	for code, cnt := range statusCount {
-		fmt.Printf("  [%d] %d responses\n", code, cnt)
-	}
+	r.printStatusCodeDistribution()
 }
