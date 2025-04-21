@@ -121,15 +121,15 @@ func main() {
 		go startLiveMonitor(ctx, results)
 	}
 
-	for i := 0; i < *concur; i++ {
+	for i := range *concur {
 		wg.Add(1)
 		var limiter <-chan time.Time
 		if *rps > 0 {
 			interval := time.Duration(float64(time.Second) / *rps)
-			// if rps is provided, add a ±10% jitter
-			limiter = JitterTick(interval, interval/10)
+			limiter = time.Tick(interval)
 		}
 
+		time.Sleep(time.Duration(1000 / *concur) * time.Millisecond) // stagger starts
 		go worker(ctx, i, client, reqTpl, jobCh, results, &wg, limiter, *showTrace)
 	}
 
