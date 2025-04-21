@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"fmt"
-	"strings"
 	"sync"
 	"time"
 
@@ -138,14 +137,8 @@ func (lm *liveMetrics) renderGraphs() string {
 
 	elapsedTime := time.Since(lm.startTime).Round(time.Second)
 
-	sb := &strings.Builder{}
-	sb.WriteString("\nStatus code distribution:\n")
-	for code, cnt := range lm.statusCount {
-		sb.WriteString(fmt.Sprintf("  [%d] %d responses\n", code, cnt))
-	}
-
 	// Combine graphs with headers
-	return fmt.Sprintf("\033[H\033[2J(running for %s, showing %s)\n\n%s\n\n%s\n\n%s", elapsedTime, min(lm.windowSize, elapsedTime), latencyGraph, rpsGraph, sb.String())
+	return fmt.Sprintf("\033[H\033[2J(running for %s, showing %s)\n\n%s\n\n%s\n\n%s", elapsedTime, min(lm.windowSize, elapsedTime), latencyGraph, rpsGraph, statusCodeDistribution(lm.statusCount))
 }
 
 func startLiveMonitor(ctx context.Context, results *resultSet) {
