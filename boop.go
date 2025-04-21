@@ -230,6 +230,7 @@ func (r *resultSet) summarize() {
 	for _, rec := range r.records {
 		if rec.failed {
 			failed++
+			statusCount[rec.status]++
 			continue
 		}
 		latencies = append(latencies, rec.latency)

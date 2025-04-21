@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"strings"
 	"sync"
 	"time"
 
@@ -17,11 +18,12 @@ type timeSeriesPoint struct {
 
 type liveMetrics struct {
 	sync.Mutex
-	points     []timeSeriesPoint
-	lastCount  int
-	lastTime   time.Time
-	startTime  time.Time
-	windowSize time.Duration
+	points      []timeSeriesPoint
+	lastCount   int
+	lastTime    time.Time
+	startTime   time.Time
+	windowSize  time.Duration
+	statusCount map[int]int
 }
 
 func newLiveMetrics(windowSize time.Duration) *liveMetrics {
@@ -41,6 +43,10 @@ func (lm *liveMetrics) sample(results *resultSet) {
 	results.mu.Lock()
 	records := results.records
 	currentCount := len(records)
+	lm.statusCount = map[int]int{}
+	for _, rec := range results.records {
+		lm.statusCount[rec.status]++
+	}
 	results.mu.Unlock()
 
 	now := time.Now()
@@ -132,8 +138,14 @@ func (lm *liveMetrics) renderGraphs() string {
 
 	elapsedTime := time.Since(lm.startTime).Round(time.Second)
 
+	sb := &strings.Builder{}
+	sb.WriteString("\nStatus code distribution:\n")
+	for code, cnt := range lm.statusCount {
+		sb.WriteString(fmt.Sprintf("  [%d] %d responses\n", code, cnt))
+	}
+
 	// Combine graphs with headers
-	return fmt.Sprintf("\033[H\033[2J(running for %s, showing %s)\n\n%s\n\n%s", elapsedTime, min(lm.windowSize, elapsedTime), latencyGraph, rpsGraph)
+	return fmt.Sprintf("\033[H\033[2J(running for %s, showing %s)\n\n%s\n\n%s\n\n%s", elapsedTime, min(lm.windowSize, elapsedTime), latencyGraph, rpsGraph, sb.String())
 }
 
 func startLiveMonitor(ctx context.Context, results *resultSet) {
