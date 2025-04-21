@@ -23,7 +23,7 @@ func worker(
 ) {
 	defer wg.Done()
 
-	for range jobCh { // each value from jobCh is a placeholder index
+	for range jobCh { // each value of jobCh a placeholder index
 		// Check if context is done before processing
 		select {
 		case <-ctx.Done():
