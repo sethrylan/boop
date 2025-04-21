@@ -341,8 +341,19 @@ func (r *resultSet) summarize() {
 	fmt.Printf("  resp read:    0.0000 secs, 0.0000 secs, 0.0000 secs\n")
 
 	// Print status code distribution
-	fmt.Printf("\nStatus code distribution:\n")
-	for code, cnt := range statusCount {
-		fmt.Printf("  [%d] %d responses\n", code, cnt)
+	fmt.Print(statusCodeDistribution(statusCount))
+}
+
+func statusCodeDistribution(statusCount map[int]int) string {
+	var sb strings.Builder
+	var keys []int
+	for k := range statusCount {
+		keys = append(keys, k)
 	}
+	sort.Ints(keys)
+	sb.WriteString("\nStatus code distribution:\n")
+	for _, k := range keys {
+		sb.WriteString(fmt.Sprintf("  [%d] %d responses\n", k, statusCount[k]))
+	}
+	return sb.String()
 }
