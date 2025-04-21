@@ -126,8 +126,10 @@ func main() {
 		var limiter <-chan time.Time
 		if *rps > 0 {
 			interval := time.Duration(float64(time.Second) / *rps)
-			limiter = time.Tick(interval)
+			// if rps is provided, add a ±10% jitter
+			limiter = JitterTick(interval, interval/10)
 		}
+
 		go worker(ctx, i, client, reqTpl, jobCh, results, &wg, limiter, *showTrace)
 	}
 
