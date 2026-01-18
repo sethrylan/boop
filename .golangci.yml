@@ -1,0 +1,118 @@
+version: "2"
+
+issues:
+  max-issues-per-linter: 0
+  max-same-issues: 0
+
+run:
+  timeout: 5m
+  modules-download-mode: readonly
+
+linters:
+  # Enable all linters by default, disable noisy/low-value ones
+  default: all
+  disable:
+    # Noisy / low-value linters
+    - cyclop            # Duplicates gocyclo functionality
+    - depguard          # Requires explicit config, not useful out of the box
+    - dupl              # Too aggressive on detecting "duplicates"
+    - err113            # Requiring wrapped static errors everywhere is overkill
+    - exhaustruct       # Requiring all struct fields is too strict
+    - forbidigo         # Requires explicit config for forbidden patterns
+    - funcorder         # Function ordering is subjective
+    - funlen            # Arbitrary function length limits
+    - gochecknoglobals  # Globals are sometimes fine
+    - gochecknoinits    # init() is sometimes appropriate
+    - gocognit          # Cognitive complexity is subjective
+    - gocyclo           # Cyclomatic complexity limits are arbitrary
+    - godot             # Requiring periods on comments is pedantic
+    - godox             # FIXME/TODO comments are normal during development
+    - ireturn           # Returning interfaces is often fine
+    - lll               # Line length limits are handled by formatters
+    - maintidx          # Maintainability index is too arbitrary
+    - mnd               # Magic number detection is too noisy
+    - nestif            # Nested if limits are arbitrary
+    - nilnil            # Returning nil, nil is sometimes valid
+    - nlreturn          # Blank line before return is stylistic preference
+    - noinlineerr       # Inline error handling is often cleaner
+    - paralleltest      # Not all tests need t.Parallel()
+    - tagalign          # Tag alignment is stylistic preference
+    - tagliatelle       # Struct tag naming conventions vary by project
+    - unparam           # Unused params are often intentional for interface compliance
+    - varnamelen        # Variable name length is context-dependent
+    - whitespace        # Whitespace rules are too pedantic
+    - wrapcheck         # Wrapping all errors is overkill
+    - wsl               # Whitespace linter is too opinionated (deprecated)
+    - wsl_v5            # Whitespace linter is too opinionated
+
+  settings:
+    errcheck:
+      check-type-assertions: true
+      check-blank: false
+
+    exhaustive:
+      default-signifies-exhaustive: true
+
+    gocritic:
+      disabled-checks:
+        - appendAssign      # Can be noisy
+
+    gosec:
+      excludes:
+        - G104  # Audit errors not checked (covered by errcheck)
+
+    govet:
+      enable-all: true
+      disable:
+        - fieldalignment  # Too noisy, minor optimization
+
+    misspell:
+      locale: US
+
+    revive:
+      rules:
+        - name: blank-imports
+        - name: context-as-argument
+        - name: context-keys-type
+        - name: dot-imports
+        - name: error-return
+        - name: error-strings
+        - name: error-naming
+        - name: exported
+          arguments:
+            - disableStutteringCheck
+        - name: if-return
+        - name: increment-decrement
+        - name: var-naming
+        - name: package-comments
+          disabled: true  # Can be noisy
+        - name: range
+        - name: receiver-naming
+        - name: time-naming
+        - name: unexported-return
+        - name: indent-error-flow
+        - name: errorf
+        - name: empty-block
+        - name: superfluous-else
+        - name: unreachable-code
+        - name: redefines-builtin-id
+
+    staticcheck:
+      checks: ["all"]
+
+  exclusions:
+    rules:
+      # Relax checks in test files
+      - path: _test\.go
+        linters:
+          - gosec
+          - errcheck
+
+      # Allow dot imports in tests for testify
+      - path: _test\.go
+        text: "dot-imports"
+
+formatters:
+  enable:
+    - gofmt
+    - goimports
