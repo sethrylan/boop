@@ -1,6 +1,7 @@
 package main
 
 import (
+	"cmp"
 	"context"
 	"crypto/tls"
 	"flag"
@@ -11,7 +12,7 @@ import (
 	"net/url"
 	"os"
 	"os/signal"
-	"sort"
+	"slices"
 	"strings"
 	"sync"
 	"syscall"
@@ -66,7 +67,7 @@ func main() {
 	}
 
 	// Build request template
-	reqTpl, err := http.NewRequest(strings.ToUpper(*method), parsedURL.String(), nil)
+	reqTpl, err := http.NewRequestWithContext(context.Background(), strings.ToUpper(*method), parsedURL.String(), nil)
 	if err != nil {
 		fmt.Printf("request build: %v\n", err)
 		os.Exit(1)
@@ -92,7 +93,7 @@ func main() {
 	tr := &http.Transport{
 		Proxy:               http.ProxyFromEnvironment,
 		MaxIdleConnsPerHost: *concur,
-		TLSClientConfig:     &tls.Config{InsecureSkipVerify: *insecure},
+		TLSClientConfig:     &tls.Config{InsecureSkipVerify: *insecure}, //nolint:gosec // User explicitly opted into insecure mode via -k flag
 		DisableCompression:  false,
 		ForceAttemptHTTP2:   *h2,
 		DisableKeepAlives:   *disableKeepAlives,
@@ -185,8 +186,8 @@ func loadBody(bodyFlag string) ([]byte, error) {
 	if bodyFlag == "" {
 		return nil, nil
 	}
-	if strings.HasPrefix(bodyFlag, "@") {
-		f, err := os.ReadFile(strings.TrimPrefix(bodyFlag, "@"))
+	if path, ok := strings.CutPrefix(bodyFlag, "@"); ok {
+		f, err := os.ReadFile(path) //nolint:gosec // User explicitly specified file path via -d flag
 		return f, err
 	}
 	return []byte(bodyFlag), nil
@@ -240,7 +241,7 @@ func (r *resultSet) summarize() {
 		statusCount[rec.status]++
 	}
 
-	sort.Slice(latencies, func(i, j int) bool { return latencies[i] < latencies[j] })
+	slices.SortFunc(latencies, cmp.Compare)
 
 	successful := len(latencies)
 	if successful == 0 {
@@ -252,9 +253,9 @@ func (r *resultSet) summarize() {
 	totalDur := r.end.Sub(r.start)
 	reqPerSec := float64(total) / totalDur.Seconds()
 
-	// Find min, max, mean
-	min := latencies[0]
-	max := latencies[successful-1]
+	// Find minLatency, maxLatency, mean
+	minLatency := latencies[0]
+	maxLatency := latencies[successful-1]
 
 	mean := time.Duration(0)
 	for _, l := range latencies {
@@ -276,14 +277,14 @@ func (r *resultSet) summarize() {
 
 	// Calculate histogram bins
 	histoBins := 11
-	binSize := (max - min) / time.Duration(histoBins-1)
+	binSize := (maxLatency - minLatency) / time.Duration(histoBins-1)
 	if binSize == 0 {
 		binSize = 1 * time.Millisecond // prevent division by zero
 	}
 
 	bins := make([]int, histoBins)
 	for _, lat := range latencies {
-		binIdx := int((lat - min) / binSize)
+		binIdx := int((lat - minLatency) / binSize)
 		if binIdx >= histoBins {
 			binIdx = histoBins - 1
 		}
@@ -301,8 +302,8 @@ func (r *resultSet) summarize() {
 	// Print summary
 	fmt.Printf("\nSummary:\n")
 	fmt.Printf("  Total:        %.4f secs\n", totalDur.Seconds())
-	fmt.Printf("  Slowest:      %.4f secs\n", max.Seconds())
-	fmt.Printf("  Fastest:      %.4f secs\n", min.Seconds())
+	fmt.Printf("  Slowest:      %.4f secs\n", maxLatency.Seconds())
+	fmt.Printf("  Fastest:      %.4f secs\n", minLatency.Seconds())
 	fmt.Printf("  Average:      %.4f secs\n", mean.Seconds())
 	fmt.Printf("  Requests/sec: %.4f\n", reqPerSec)
 	fmt.Printf("\n")
@@ -311,8 +312,8 @@ func (r *resultSet) summarize() {
 
 	// Print histogram
 	fmt.Printf("\nResponse time histogram:\n")
-	for i := 0; i < histoBins; i++ {
-		binTime := min + time.Duration(i)*binSize
+	for i := range histoBins {
+		binTime := minLatency + time.Duration(i)*binSize
 		bar := ""
 		if maxCount > 0 {
 			barLength := int(40 * float64(bins[i]) / float64(maxCount))
@@ -337,7 +338,7 @@ func (r *resultSet) summarize() {
 	fmt.Printf("  DNS+dialup:   0.0000 secs, 0.0000 secs, 0.0000 secs\n")
 	fmt.Printf("  DNS-lookup:   0.0000 secs, 0.0000 secs, 0.0000 secs\n")
 	fmt.Printf("  req write:    0.0000 secs, 0.0000 secs, 0.0000 secs\n")
-	fmt.Printf("  resp wait:    %.4f secs, %.4f secs, %.4f secs\n", mean.Seconds(), min.Seconds(), max.Seconds())
+	fmt.Printf("  resp wait:    %.4f secs, %.4f secs, %.4f secs\n", mean.Seconds(), minLatency.Seconds(), maxLatency.Seconds())
 	fmt.Printf("  resp read:    0.0000 secs, 0.0000 secs, 0.0000 secs\n")
 
 	// Print status code distribution
@@ -346,11 +347,11 @@ func (r *resultSet) summarize() {
 
 func statusCodeDistribution(statusCount map[int]int) string {
 	var sb strings.Builder
-	var keys []int
+	keys := make([]int, 0, len(statusCount))
 	for k := range statusCount {
 		keys = append(keys, k)
 	}
-	sort.Ints(keys)
+	slices.Sort(keys)
 	sb.WriteString("\nStatus code distribution:\n")
 	for _, k := range keys {
 		sb.WriteString(fmt.Sprintf("  [%d] %d responses\n", k, statusCount[k]))

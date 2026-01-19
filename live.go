@@ -17,6 +17,7 @@ type timeSeriesPoint struct {
 
 type liveMetrics struct {
 	sync.Mutex
+
 	points      []timeSeriesPoint
 	lastCount   int
 	lastTime    time.Time

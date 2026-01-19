@@ -21,7 +21,7 @@ func (d dummyRoundTripper) RoundTrip(req *http.Request) (*http.Response, error) 
 		return nil, errors.New("dummy error")
 	}
 	return &http.Response{
-		StatusCode:    200,
+		StatusCode:    http.StatusOK,
 		Body:          io.NopCloser(strings.NewReader("OK")),
 		ContentLength: 2,
 		Header:        make(http.Header),
@@ -46,7 +46,7 @@ func (b *bodyCheckTransport) RoundTrip(req *http.Request) (*http.Response, error
 	}
 
 	return &http.Response{
-		StatusCode:    200,
+		StatusCode:    http.StatusOK,
 		Body:          io.NopCloser(strings.NewReader("OK")),
 		ContentLength: 2,
 		Header:        make(http.Header),
@@ -59,7 +59,7 @@ func TestWorkerSuccess(t *testing.T) {
 		Transport: dummyRoundTripper{fail: false},
 		Timeout:   5 * time.Second,
 	}
-	reqTpl, err := http.NewRequest("GET", "http://example.com", nil)
+	reqTpl, err := http.NewRequestWithContext(t.Context(), http.MethodGet, "http://example.com", nil)
 	if err != nil {
 		t.Fatalf("failed to create request template: %v", err)
 	}
@@ -69,7 +69,7 @@ func TestWorkerSuccess(t *testing.T) {
 	var wg sync.WaitGroup
 	results := &resultSet{}
 
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(t.Context())
 	defer cancel()
 
 	// Start one worker.
@@ -77,7 +77,7 @@ func TestWorkerSuccess(t *testing.T) {
 	go worker(ctx, 1, client, reqTpl, jobCh, results, &wg, nil, false)
 
 	// Send 3 jobs.
-	for i := 0; i < 3; i++ {
+	for i := range 3 {
 		jobCh <- i
 	}
 	close(jobCh)
@@ -103,7 +103,7 @@ func TestWorkerFailure(t *testing.T) {
 		Transport: dummyRoundTripper{fail: true},
 		Timeout:   5 * time.Second,
 	}
-	reqTpl, err := http.NewRequest("GET", "http://example.com", nil)
+	reqTpl, err := http.NewRequestWithContext(t.Context(), http.MethodGet, "http://example.com", nil)
 	if err != nil {
 		t.Fatalf("failed to create request template: %v", err)
 	}
@@ -113,7 +113,7 @@ func TestWorkerFailure(t *testing.T) {
 	var wg sync.WaitGroup
 	results := &resultSet{}
 
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(t.Context())
 	defer cancel()
 
 	// Start one worker.
@@ -121,7 +121,7 @@ func TestWorkerFailure(t *testing.T) {
 	go worker(ctx, 2, client, reqTpl, jobCh, results, &wg, nil, false)
 
 	// Send 2 jobs.
-	for i := 0; i < 2; i++ {
+	for i := range 2 {
 		jobCh <- i
 	}
 	close(jobCh)
@@ -147,7 +147,7 @@ func TestWorkerContextCancellation(t *testing.T) {
 		Transport: dummyRoundTripper{fail: false},
 		Timeout:   5 * time.Second,
 	}
-	reqTpl, err := http.NewRequest("GET", "http://example.com", nil)
+	reqTpl, err := http.NewRequestWithContext(t.Context(), http.MethodGet, "http://example.com", nil)
 	if err != nil {
 		t.Fatalf("failed to create request template: %v", err)
 	}
@@ -158,14 +158,14 @@ func TestWorkerContextCancellation(t *testing.T) {
 	results := &resultSet{}
 
 	// Create a context we can cancel
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(t.Context())
 
 	// Start the worker
 	wg.Add(1)
 	go worker(ctx, 1, client, reqTpl, jobCh, results, &wg, nil, false)
 
 	// Send a few jobs to ensure worker is running
-	for i := 0; i < 3; i++ {
+	for i := range 3 {
 		jobCh <- i
 	}
 
@@ -196,7 +196,7 @@ func TestWorkerRateLimiting(t *testing.T) {
 		Transport: dummyRoundTripper{fail: false},
 		Timeout:   5 * time.Second,
 	}
-	reqTpl, err := http.NewRequest("GET", "http://example.com", nil)
+	reqTpl, err := http.NewRequestWithContext(t.Context(), http.MethodGet, "http://example.com", nil)
 	if err != nil {
 		t.Fatalf("failed to create request template: %v", err)
 	}
@@ -205,7 +205,7 @@ func TestWorkerRateLimiting(t *testing.T) {
 	var wg sync.WaitGroup
 	results := &resultSet{}
 
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(t.Context())
 	defer cancel()
 
 	// Create a controlled rate limiter channel
@@ -216,7 +216,7 @@ func TestWorkerRateLimiting(t *testing.T) {
 	go worker(ctx, 1, client, reqTpl, jobCh, results, &wg, limiterCh, false)
 
 	// Send jobs but don't release the limiter yet
-	for i := 0; i < 5; i++ {
+	for i := range 5 {
 		jobCh <- i
 	}
 	close(jobCh)
@@ -228,7 +228,8 @@ func TestWorkerRateLimiting(t *testing.T) {
 	}
 
 	// Release the rate limiter for each job
-	for i := 0; i < 5; i++ {
+	for i := range 5 {
+		_ = i
 		limiterCh <- time.Now()
 		time.Sleep(10 * time.Millisecond) // Give worker time to process
 	}
@@ -270,7 +271,7 @@ func TestWorkerWithBody(t *testing.T) {
 	// Create request with a body
 	reqBody := "test-body"
 	reqBodyReader := strings.NewReader(reqBody)
-	reqTpl, err := http.NewRequest("POST", "http://example.com", reqBodyReader)
+	reqTpl, err := http.NewRequestWithContext(t.Context(), http.MethodPost, "http://example.com", reqBodyReader)
 
 	// Set up GetBody function to recreate the body when needed
 	reqTpl.GetBody = func() (io.ReadCloser, error) {
@@ -285,7 +286,7 @@ func TestWorkerWithBody(t *testing.T) {
 	var wg sync.WaitGroup
 	results := &resultSet{}
 
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(t.Context())
 	defer cancel()
 
 	// Start worker
