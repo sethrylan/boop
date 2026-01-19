@@ -42,7 +42,7 @@ func worker(
 		}
 
 		// Clone request (cheap shallow copy, new body)
-		req := reqTpl.Clone(reqTpl.Context())
+		req := reqTpl.Clone(ctx)
 		if req.Body != nil {
 			_ = req.Body.Close() // close old (no‑op for NopCloser)
 			req.Body, _ = reqTpl.GetBody()
@@ -57,7 +57,7 @@ func worker(
 					fmt.Printf("worker %d got conn: reused=%v idle=%v\n", id, ci.Reused, ci.WasIdle)
 				},
 			}
-			req = req.WithContext(httptrace.WithClientTrace(req.Context(), trace))
+			req = req.WithContext(httptrace.WithClientTrace(ctx, trace))
 		}
 
 		resp, err := client.Do(req)

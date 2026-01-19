@@ -1,14 +1,13 @@
-name: ci
+name: CI
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
-    branches: [ main ]
+    branches: [main]
 
 permissions:
   contents: read
-  pull-requests: write
 
 jobs:
   lint:
@@ -18,11 +17,10 @@ jobs:
       - uses: actions/setup-go@v6
         with:
           go-version-file: go.mod
-      - uses: golangci/golangci-lint-action@v9
+      - uses: golangci/golangci-lint-action@1e7e51e771db61008b38414a730f564565cf7c20
         with:
-          version: v2.1
-          install-mode: goinstall
-          args: --timeout=3m
+          version: latest
+
   test:
     runs-on: ubuntu-latest
     steps:
@@ -30,4 +28,4 @@ jobs:
       - uses: actions/setup-go@v6
         with:
           go-version-file: go.mod
-      - run: go test -race ./...
+      - run: go test -v -race -coverprofile=coverage.out ./...
