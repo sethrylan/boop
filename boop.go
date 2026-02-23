@@ -354,7 +354,7 @@ func statusCodeDistribution(statusCount map[int]int) string {
 	slices.Sort(keys)
 	sb.WriteString("\nStatus code distribution:\n")
 	for _, k := range keys {
-		sb.WriteString(fmt.Sprintf("  [%d] %d responses\n", k, statusCount[k]))
+		fmt.Fprintf(&sb, "  [%d] %d responses\n", k, statusCount[k])
 	}
 	return sb.String()
 }

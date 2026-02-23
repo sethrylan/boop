@@ -60,7 +60,7 @@ func worker(
 			req = req.WithContext(httptrace.WithClientTrace(ctx, trace))
 		}
 
-		resp, err := client.Do(req)
+		resp, err := client.Do(req) //nolint:gosec // req.URL is provided by the user as a CLI argument, not untrusted input
 		if err != nil {
 			rec.failed = true
 			rec.errMsg = err.Error()
