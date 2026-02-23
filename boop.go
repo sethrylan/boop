@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"math"
+	"math/rand/v2"
 	"net/http"
 	"net/url"
 	"os"
@@ -21,7 +22,7 @@ import (
 
 var (
 	totalReq          = flag.Int("n", math.MaxInt-1, "Total requests to perform")
-	concur            = flag.Int("c", 50, "Concurrency level, a.k.a., number of workers")
+	concur            = flag.Int("c", 10, "Concurrency level, a.k.a., number of workers")
 	rps               = flag.Float64("q", 0, "Per‑worker RPS (0 = unlimited)")
 	method            = flag.String("m", "GET", "HTTP method")
 	data              = flag.String("d", "", "Request body. Use @file to read a file")
@@ -130,7 +131,10 @@ func main() {
 			limiter = time.Tick(interval)
 		}
 
-		time.Sleep(time.Duration(1000 / *concur) * time.Millisecond) // stagger starts
+		// stagger starts with jitter to avoid synchronized bursts
+		base := time.Duration(1000 / *concur) * time.Millisecond
+		jitter := time.Duration(rand.Int64N(int64(base/2 + 1)))
+		time.Sleep(base + jitter)
 		go worker(ctx, i, client, reqTpl, jobCh, results, &wg, limiter, *showTrace)
 	}
 
