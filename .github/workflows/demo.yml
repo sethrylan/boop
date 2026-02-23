@@ -1,0 +1,75 @@
+name: demo
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/demo.yml'
+      - 'docs/demo.tape'
+      - '*.go'
+      - 'go.mod'
+      - 'go.sum'
+
+permissions:
+  contents: write
+
+jobs:
+  demo:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/create-github-app-token@v2
+        id: app-token
+        with:
+          app-id: ${{ secrets.CI_BOT_APP_ID }}
+          private-key: ${{ secrets.CI_BOT_APP_PRIVATE_KEY }}
+
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.head_ref }}
+          token: ${{ steps.app-token.outputs.token }}
+
+      - name: Skip if last commit is from bot
+        id: check
+        run: |
+          if [ "$(git log -1 --format='%an')" = "github-actions[bot]" ]; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/setup-go@v6
+        if: steps.check.outputs.skip != 'true'
+        with:
+          go-version-file: go.mod
+
+      - name: Install VHS
+        if: steps.check.outputs.skip != 'true'
+        run: |
+          sudo apt update
+          sudo apt install -y ffmpeg ttyd
+          go install github.com/charmbracelet/vhs@5262b81b590d3908a9e2d63cf06603ec0d0ae78e
+
+      - name: Build boop
+        if: steps.check.outputs.skip != 'true'
+        run: |
+          go build -o boop .
+          sudo install boop /usr/local/bin/boop
+
+      - name: Generate demo GIF
+        if: steps.check.outputs.skip != 'true'
+        env:
+          CLICOLOR_FORCE: "1"
+          COLORTERM: truecolor
+          CI: ""
+        run: |
+          vhs docs/demo.tape
+          mv demo.gif docs/demo.gif
+
+      - name: Commit updated demo GIF
+        if: steps.check.outputs.skip != 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/demo.gif
+          if ! git diff --cached --quiet; then
+            git commit -m "chore: update demo.gif"
+            git push
+          fi
