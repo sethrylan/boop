@@ -123,12 +123,15 @@ func main() {
 		go startLiveMonitor(ctx, results)
 	}
 
+	var tickers []*time.Ticker
 	for i := range *concur {
 		wg.Add(1)
 		var limiter <-chan time.Time
 		if *rps > 0 {
 			interval := time.Duration(float64(time.Second) / *rps)
-			limiter = time.Tick(interval)
+			t := time.NewTicker(interval)
+			tickers = append(tickers, t)
+			limiter = t.C
 		}
 
 		// stagger starts with jitter to avoid synchronized bursts
@@ -152,6 +155,10 @@ func main() {
 
 	// wait for jobs to finish
 	wg.Wait()
+
+	for _, t := range tickers {
+		t.Stop()
+	}
 
 	// collect results
 	results.end = time.Now()
