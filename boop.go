@@ -136,7 +136,7 @@ func main() {
 		}
 
 		// stagger starts with jitter to avoid synchronized bursts
-		base := time.Duration(1000 / *concur) * time.Millisecond
+		base := time.Second / time.Duration(*concur)
 		jitter := time.Duration(rand.Int64N(int64(base/2 + 1))) //nolint:gosec // jitter doesn't need cryptographic randomness
 		time.Sleep(base + jitter)
 		go worker(ctx, i, client, reqTpl, jobCh, results, &wg, limiter, *showTrace)
