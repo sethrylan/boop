@@ -11,7 +11,7 @@
   <a href="https://github.com/sethrylan/boop/actions"><img src="https://github.com/sethrylan/boop/workflows/ci/badge.svg" alt="Build Status"></a>
 </p>
 
-Yet another replacement to [ApacheBench/ab](https://httpd.apache.org/docs/2.4/programs/ab.html)/[boom](https://github.com/tarekziade/boom)/[hey](https://github.com/rakyll/hey) for HTTP/2 benchmarking.
+Yet another HTTP/2 benchmark tool, just like [ApacheBench/ab](https://httpd.apache.org/docs/2.4/programs/ab.html)/[boom](https://github.com/tarekziade/boom)/[hey](https://github.com/rakyll/hey), but not those.
 
 ## Usage
 
