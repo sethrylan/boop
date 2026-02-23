@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"cmp"
 	"context"
 	"crypto/tls"
@@ -74,9 +75,9 @@ func main() {
 		os.Exit(1)
 	}
 	if len(bodyBytes) > 0 {
-		reqTpl.Body = io.NopCloser(bytesReader(bodyBytes))
+		reqTpl.Body = io.NopCloser(bytes.NewReader(bodyBytes))
 		reqTpl.GetBody = func() (io.ReadCloser, error) {
-			return io.NopCloser(bytesReader(bodyBytes)), nil
+			return io.NopCloser(bytes.NewReader(bodyBytes)), nil
 		}
 	}
 
@@ -164,24 +165,6 @@ func main() {
 	results.end = time.Now()
 	results.summarize()
 }
-
-// bytesReaderT is a constant‑time bytes.Reader equivalent
-func bytesReader(b []byte) *bytesReaderT { return &bytesReaderT{b: b} }
-
-type bytesReaderT struct {
-	b []byte
-	i int64
-}
-
-func (r *bytesReaderT) Read(p []byte) (int, error) {
-	if r.i >= int64(len(r.b)) {
-		return 0, io.EOF
-	}
-	n := copy(p, r.b[r.i:])
-	r.i += int64(n)
-	return n, nil
-}
-func (r *bytesReaderT) Close() error { return nil }
 
 // headerSlice is for parsing HTTP headers
 type headerSlice []string
