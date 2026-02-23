@@ -37,17 +37,20 @@ func newLiveMetrics(windowSize time.Duration) *liveMetrics {
 }
 
 func (lm *liveMetrics) sample(results *resultSet) {
-	lm.Lock()
-	defer lm.Unlock()
-
+	// Snapshot results under results.mu only (avoid nested locks)
 	results.mu.Lock()
 	records := results.records
 	currentCount := len(records)
-	lm.statusCount = map[int]int{}
-	for _, rec := range results.records {
-		lm.statusCount[rec.status]++
+	statusCount := map[int]int{}
+	for _, rec := range records {
+		statusCount[rec.status]++
 	}
 	results.mu.Unlock()
+
+	lm.Lock()
+	defer lm.Unlock()
+
+	lm.statusCount = statusCount
 
 	now := time.Now()
 
