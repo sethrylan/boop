@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"io"
 	"os"
 	"path/filepath"
@@ -83,7 +84,7 @@ func TestHeaderSlice(t *testing.T) {
 
 func TestBytesReader(t *testing.T) {
 	input := []byte("test data")
-	reader := bytesReader(input)
+	reader := bytes.NewReader(input)
 
 	// Test reading entire content
 	buf := make([]byte, len(input))
@@ -107,14 +108,8 @@ func TestBytesReader(t *testing.T) {
 		t.Errorf("expected to read 0 bytes, got %d", n)
 	}
 
-	// Test Close()
-	err = reader.Close()
-	if err != nil {
-		t.Errorf("bytesReader.Close failed: %v", err)
-	}
-
 	// Test partial read
-	reader = bytesReader(input)
+	reader = bytes.NewReader(input)
 	smallBuf := make([]byte, 4)
 	n, err = reader.Read(smallBuf)
 	if err != nil {
