@@ -65,7 +65,7 @@ Set FontSize 16
 Set Width 700
 Set Height 700
 
-Type@25ms "boop -live https://google.com"
+Type@25ms "boop -live -c 2 https://sethrylan.org"
 Sleep 100ms
 Enter
 Sleep 10s
