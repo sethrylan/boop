@@ -47,30 +47,30 @@ boop -live https://google.com
 ```
 Usage: boop [options] <url>
   -H value
-        Custom header. Repeatable.
+    	Custom header. Repeatable.
   -c int
-        Concurrency level, a.k.a., number of workers (default 50) (default 50)
+    	Concurrency level, a.k.a., number of workers (default 10)
   -d string
-        Request body. Use @file to read a file
+    	Request body. Use @file to read a file
   -h2
-        Enable HTTP/2 (default true)
-  -k    Skip TLS certificate verification
+    	Enable HTTP/2 (default true)
+  -k	Skip TLS certificate verification
   -live
-        Display live metrics graph
+    	Display live metrics graph
   -m string
-        HTTP method (default "GET")
+    	HTTP method (default "GET")
   -n int
-        Total requests to perform (default: MaxInt) (default 9223372036854775806)
+    	Total requests to perform (default 9223372036854775806)
   -no-keepalive
-        Disable HTTP keep-alives
+    	Disable HTTP keep-alives
   -no-redirect
-        Do not follow redirects
+    	Do not follow redirects
   -q float
-        Per‑worker RPS (0 = unlimited)
+    	Per‑worker RPS (0 = unlimited)
   -t duration
-        Per‑request timeout (default 30s)
+    	Per‑request timeout (default 30s)
   -trace
-        Output per request connection trace
+    	Output per request connection trace
 ```
 
 ## Installation
