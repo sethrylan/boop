@@ -329,11 +329,7 @@ func (r *resultSet) summarize() {
 
 	// Note: Detailed timing metrics would require additional instrumentation
 	fmt.Printf("\nDetails (average, fastest, slowest):\n")
-	fmt.Printf("  DNS+dialup:   0.0000 secs, 0.0000 secs, 0.0000 secs\n")
-	fmt.Printf("  DNS-lookup:   0.0000 secs, 0.0000 secs, 0.0000 secs\n")
-	fmt.Printf("  req write:    0.0000 secs, 0.0000 secs, 0.0000 secs\n")
 	fmt.Printf("  resp wait:    %.4f secs, %.4f secs, %.4f secs\n", mean.Seconds(), minLatency.Seconds(), maxLatency.Seconds())
-	fmt.Printf("  resp read:    0.0000 secs, 0.0000 secs, 0.0000 secs\n")
 
 	// Print status code distribution
 	fmt.Print(statusCodeDistribution(statusCount))
