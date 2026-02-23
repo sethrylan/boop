@@ -1,0 +1,20 @@
+# gh-repolint configuration
+# See https://github.com/sethrylan/gh-repolint for documentation
+
+checks:
+  files:
+    - name: ".github/dependabot.yml"
+      reference: "sethrylan/sethrylan/.repolint/go-dependabot.yml"
+    - name: ".github/workflows/ci.yml"
+      reference: "sethrylan/sethrylan/.repolint/workflows/ci.yml"
+    - name: ".github/workflows/conventional-commits.yml"
+      reference: "sethrylan/sethrylan/.repolint/workflows/conventional-commits.yml"
+    - name: ".github/workflows/dependabot-auto.yml"
+      reference: "sethrylan/sethrylan/.repolint/workflows/dependabot-auto.yml"
+    - name: "LICENSE"
+      reference: "sethrylan/sethrylan/.repolint/LICENSE"
+    - name: ".golangci.yml"
+      reference: "sethrylan/sethrylan/.repolint/.golangci.yml"
+    - name: ".github/workflows/demo.yml"
+      reference: "sethrylan/sethrylan/.repolint/workflows/demo-go.yml"
+
