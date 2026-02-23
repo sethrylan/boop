@@ -67,14 +67,12 @@ func worker(
 			out.add(rec)
 			continue
 		}
-		_, _ = io.Copy(io.Discard, resp.Body) // drain body
+		n, _ := io.Copy(io.Discard, resp.Body) // drain body
 		_ = resp.Body.Close()
 
 		rec.latency = time.Since(start)
 		rec.status = resp.StatusCode
-		if resp.ContentLength > 0 {
-			rec.size = resp.ContentLength
-		}
+		rec.size = n
 		out.add(rec)
 	}
 }
