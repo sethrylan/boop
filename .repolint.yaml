@@ -17,4 +17,7 @@ checks:
       reference: "sethrylan/sethrylan/.repolint/.golangci.yml"
     - name: ".github/workflows/demo.yml"
       reference: "sethrylan/sethrylan/.repolint/workflows/demo-go.yml"
-
+    - name: ".github/workflows/demo-hint.yml"
+      reference: "sethrylan/sethrylan/.repolint/workflows/demo-hint.yml"
+    - name: "docs/demo-workflow.md"
+      reference: "sethrylan/sethrylan/.repolint/demo-workflow.md"
