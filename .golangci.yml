@@ -40,10 +40,12 @@ linters:
     - tagliatelle       # Struct tag naming conventions vary by project
     - unparam           # Unused params are often intentional for interface compliance
     - varnamelen        # Variable name length is context-dependent
-    - whitespace        # Whitespace rules are too pedantic
+    - whitespace        # Whitespace rules are too strict
     - wrapcheck         # Wrapping all errors is overkill
     - wsl               # Whitespace linter is too opinionated (deprecated)
     - wsl_v5            # Whitespace linter is too opinionated
+    # Deprecated linters (replaced by newer versions enabled via default: all)
+    - gomodguard        # Deprecated since v2.12.0, replaced by gomodguard_v2
 
   settings:
     usetesting:
@@ -102,7 +104,7 @@ linters:
         - name: redefines-builtin-id
 
     staticcheck:
-      checks: ["all"]
+      checks: ["all", "-ST1000"]  # ST1000: package comment requirement is too strict
 
   exclusions:
     rules:
@@ -111,6 +113,7 @@ linters:
         linters:
           - gosec
           - errcheck
+          - goconst
 
       # Allow dot imports in tests for testify
       - path: _test\.go
