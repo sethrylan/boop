@@ -55,3 +55,14 @@ sequenceDiagram
 - Uses the GitHub App token for checkout and push (to trigger downstream CI workflows on the new commit)
 - Generates the demo GIF and commits it to the PR branch
 - Posts a sticky PR comment with the generated GIF
+
+## Secret Setup
+
+The workflow requires the `CI_BOT_APP_ID` and `CI_BOT_APP_PRIVATE_KEY` secrets from the [sethrylan-ci-bot](https://github.com/apps/sethrylan-ci-bot) GitHub App installation. These must be configured as both **Actions secrets** (for `workflow_dispatch` runs) and **Dependabot secrets** (for Dependabot-triggered workflows that need the app token).
+
+### Actions secrets
+
+```sh
+gh secret set CI_BOT_APP_ID --body "2924818"
+op read "op://vault/sethrylan-ci-bot/private key" | gh secret set CI_BOT_APP_PRIVATE_KEY
+```
