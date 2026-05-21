@@ -1,11 +1,8 @@
 # boop
 
 <p>
-  <picture >
-    <source media="(prefers-color-scheme: dark)" srcset="docs/boop-dark.png">
-    <source media="(prefers-color-scheme: light)" srcset="docs/boop-light.png">
-    <img alt="Boop Boop" src="docs/boop-dark.png" width="20%">
-  </picture>
+  <img alt="Boop Boop" src="docs/boop-dark.png#gh-dark-mode-only" width="20%">
+  <img alt="Boop Boop" src="docs/boop-light.png#gh-light-mode-only" width="20%">
   <br>
   <a href="https://github.com/sethrylan/boop/releases"><img src="https://img.shields.io/github/release/sethrylan/boop.svg" alt="Latest Release"></a>
   <a href="https://github.com/sethrylan/boop/actions"><img src="https://github.com/sethrylan/boop/workflows/ci/badge.svg" alt="Build Status"></a>
