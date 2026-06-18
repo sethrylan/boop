@@ -219,7 +219,12 @@ func (r *resultSet) summarize() {
 		return
 	}
 
+	// [500] 467 responses (avg latency 123ms)
+	// [200] 387 responses (avg latency 299ms)
+
 	latencies := make([]time.Duration, 0, total)
+	latenciesMap := map[int][]time.Duration{}
+
 	var bytesTotal int64
 	var failed int
 	statusCount := map[int]int{}
@@ -230,6 +235,7 @@ func (r *resultSet) summarize() {
 			statusCount[rec.status]++
 			continue
 		}
+		latenciesMap[rec.status] = append(latenciesMap[rec.status], rec.latency)
 		latencies = append(latencies, rec.latency)
 		bytesTotal += rec.size
 		statusCount[rec.status]++
@@ -333,6 +339,31 @@ func (r *resultSet) summarize() {
 
 	// Print status code distribution
 	fmt.Print(statusCodeDistribution(statusCount))
+
+	fmt.Print(statusCodeDistributionWithLatency(latenciesMap))
+
+}
+
+func statusCodeDistributionWithLatency(statusCountMap map[int][]time.Duration) string {
+	var sb strings.Builder
+	keys := make([]int, 0, len(statusCountMap))
+	for k := range statusCountMap {
+		keys = append(keys, k)
+	}
+	slices.Sort(keys)
+	sb.WriteString("\nStatus code distribution with average latency:\n")
+	for _, k := range keys {
+		latencies := statusCountMap[k]
+		var avgLatency time.Duration
+		if len(latencies) > 0 {
+			for _, l := range latencies {
+				avgLatency += l
+			}
+			avgLatency /= time.Duration(len(latencies))
+		}
+		fmt.Fprintf(&sb, "  [%d] %d responses (avg latency %.4f secs)\n", k, len(latencies), avgLatency.Seconds())
+	}
+	return sb.String()
 }
 
 func statusCodeDistribution(statusCount map[int]int) string {
