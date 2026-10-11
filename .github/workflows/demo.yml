@@ -36,12 +36,12 @@ jobs:
           app-id: ${{ secrets.CI_BOT_APP_ID }}
           private-key: ${{ secrets.CI_BOT_APP_PRIVATE_KEY }}
 
-      - uses: actions/checkout@v7.0.1
+      - uses: actions/checkout@v7
         with:
           ref: ${{ steps.pr.outputs.head_sha }}
           token: ${{ steps.app-token.outputs.token }}
 
-      - uses: actions/setup-go@v6.5.0
+      - uses: actions/setup-go@v7
         with:
           go-version-file: go.mod
 
@@ -74,7 +74,7 @@ jobs:
           fi
 
       - name: Post demo comment
-        uses: marocchino/sticky-pull-request-comment@5770ad5eb8f42dd2c4f34da00c94c5381e49af88
+        uses: marocchino/sticky-pull-request-comment@5770ad5eb8f42dd2c4f34da00c94c5381e49af88 # v3.0.5
         with:
           header: demo
           number: ${{ inputs.pr_number }}

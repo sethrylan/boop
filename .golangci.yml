@@ -18,9 +18,11 @@ linters:
     - dupl              # Too aggressive on detecting "duplicates"
     - err113            # Requiring wrapped static errors everywhere is overkill
     - exhaustruct       # Requiring all struct fields is too strict
+    - exhaustruct_v5    # Requiring all struct fields is too strict
     - forbidigo         # Requires explicit config for forbidden patterns
     - funcorder         # Function ordering is subjective
     - funlen            # Arbitrary function length limits
+    - goconst           # Repeated string detection is too noisy
     - gochecknoglobals  # Globals are sometimes fine
     - gochecknoinits    # init() is sometimes appropriate
     - gocognit          # Cognitive complexity is subjective
